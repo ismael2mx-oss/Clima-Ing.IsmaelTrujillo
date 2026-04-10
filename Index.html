@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clima Ing. Ismael Trujillo</title>
+<link rel="manifest" href="manifest.json">
+<!-- Skycons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  display: flex;
+  justify-content: center;
+  transition: background 0.8s ease;
+}
+
+.app {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+#fechaHora {
+  text-align: center;
+  font-size: 16px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 15px;
+  font-size: 16px;
+  outline: none;
+}
+
+.card {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  animation: fadeIn 0.5s ease;
+}
+
+.temp {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.condicion {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.mini-card {
+  background: rgba(255,255,255,0.08);
+  padding: 15px;
+  border-radius: 15px;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>🌤️ Clima Ing. Ismael Trujillo</h1>
+<p id="fechaHora"></p>
+
+<input type="text" id="buscador" placeholder="Buscar ciudad...">
+
+<div id="climaUsuario"></div>
+
+<div class="grid" id="miniClima"></div>
+
+</div>
+
+<script>
+const API_KEY = "a03fddc3b16c43218ca182151252004";
+
+// 🕒 Fecha
+function actualizarFechaHora() {
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString('es-MX', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
+  const hora = ahora.toLocaleTimeString('es-MX');
+
+  document.getElementById("fechaHora").innerText =
+    `${fecha} - ${hora}`;
+}
+setInterval(actualizarFechaHora, 1000);
+actualizarFechaHora();
+
+// 🎨 Fondo dinámico
+function cambiarFondo(condicion, esDia) {
+  condicion = condicion.toLowerCase();
+
+  let fondo;
+
+  if (!esDia) {
+    fondo = "linear-gradient(135deg, #0f2027, #203a43, #2c5364)";
+  } else if (condicion.includes("soleado") || condicion.includes("despejado")) {
+    fondo = "linear-gradient(135deg, #56ccf2, #2f80ed)";
+  } else if (condicion.includes("nublado")) {
+    fondo = "linear-gradient(135deg, #757f9a, #d7dde8)";
+  } else if (condicion.includes("lluvia") || condicion.includes("tormenta")) {
+    fondo = "linear-gradient(135deg, #232526, #414345)";
+  } else {
+    fondo = "linear-gradient(135deg, #1e3c72, #2a5298)";
+  }
+
+  document.body.style.background = fondo;
+}
+
+// 🌤️ Iconos
+function obtenerIcono(condicion, esDia) {
+  condicion = condicion.toLowerCase();
+
+  if (!esDia) return "CLEAR_NIGHT";
+  if (condicion.includes("soleado") || condicion.includes("despejado")) return "CLEAR_DAY";
+  if (condicion.includes("nublado")) return "CLOUDY";
+  if (condicion.includes("parcial")) return "PARTLY_CLOUDY_DAY";
+  if (condicion.includes("lluvia")) return "RAIN";
+  if (condicion.includes("tormenta")) return "SLEET";
+
+  return "PARTLY_CLOUDY_DAY";
+}
+
+// 🌡️ Mostrar clima
+function mostrarClima(ciudad, data) {
+
+  cambiarFondo(data.current.condition.text, data.current.is_day);
+
+  document.getElementById("climaUsuario").innerHTML = `
+    <div class="card">
+      <h2>📍 ${ciudad}</h2>
+      <canvas id="iconoClima" width="80" height="80"></canvas>
+      <div class="temp">${data.current.temp_c}°C</div>
+      <div class="condicion">${data.current.condition.text}</div>
+    </div>
+  `;
+
+  // activar icono después de renderizar
+  setTimeout(() => {
+    const skycons = new Skycons({ color: "white" });
+    const icono = obtenerIcono(data.current.condition.text, data.current.is_day);
+
+    skycons.add("iconoClima", Skycons[icono]);
+    skycons.play();
+  }, 100);
+}
+
+// 📍 Ubicación automática
+function obtenerUbicacion() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      let lat = pos.coords.latitude;
+      let lon = pos.coords.longitude;
+
+      let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${lat},${lon}&lang=es`;
+      let res = await fetch(url);
+      let data = await res.json();
+
+      mostrarClima(data.location.name, data);
+    });
+  }
+}
+
+// 🔎 Buscador
+document.getElementById("buscador").addEventListener("keyup", async (e) => {
+  let ciudad = e.target.value;
+
+  if (ciudad.length < 3) return;
+
+  let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad},Sonora,Mexico&lang=es`;
+  let res = await fetch(url);
+  let data = await res.json();
+
+  mostrarClima(data.location.name, data);
+});
+
+// 🌆 Mini ciudades
+const miniCiudades = [
+  "Hermosillo",
+  "Nogales",
+  "Ciudad Obregon",
+  "San Luis Rio Colorado"
+];
+
+async function cargarMini() {
+  let contenedor = document.getElementById("miniClima");
+  contenedor.innerHTML = "";
+
+  for (let ciudad of miniCiudades) {
+    let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad},Sonora,Mexico&lang=es`;
+    let res = await fetch(url);
+    let data = await res.json();
+
+    let div = document.createElement("div");
+    div.className = "mini-card";
+
+    div.innerHTML = `
+      <strong>${ciudad}</strong><br>
+      ${data.current.temp_c}°C
+    `;
+
+    contenedor.appendChild(div);
+  }
+}
+
+// iniciar
+obtenerUbicacion();
+cargarMini();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registrado"))
+    .catch(error => console.log("Error:", error));
+}
+</script>
+
+</body>
+</html>
