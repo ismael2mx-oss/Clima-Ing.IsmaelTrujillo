@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clima Ing. Ismael Trujillo</title>
+
 <link rel="manifest" href="manifest.json">
+
 <!-- Skycons -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
 
@@ -35,9 +37,7 @@ h1 {
   opacity: 0.8;
   margin-bottom: 20px;
 }
-#iconoClima {
-  margin: 10px 0;
-}
+
 input {
   width: 100%;
   padding: 12px;
@@ -48,6 +48,7 @@ input {
   outline: none;
 }
 
+/* 🔥 CARD PRO */
 .card {
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
@@ -59,15 +60,31 @@ input {
 
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+}
+
+/* BLOQUES */
+.top {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+}
+
+.middle {
+  display: flex;
   justify-content: center;
-  gap: 10px;
+  align-items: center;
+}
+
+.bottom {
+  text-align: center;
 }
 
 .temp {
-  font-size: 52px;
+  font-size: 56px;
   font-weight: bold;
-  margin: 5px 0;
+  margin: 10px 0;
 }
 
 .condicion {
@@ -75,6 +92,7 @@ input {
   opacity: 0.9;
 }
 
+/* MINI CARDS */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -112,9 +130,10 @@ input {
 </div>
 
 <script>
+
 const API_KEY = "a03fddc3b16c43218ca182151252004";
 
-// 🕒 Fecha
+/* 🕒 FECHA */
 function actualizarFechaHora() {
   const ahora = new Date();
   const fecha = ahora.toLocaleDateString('es-MX', {
@@ -130,7 +149,7 @@ function actualizarFechaHora() {
 setInterval(actualizarFechaHora, 1000);
 actualizarFechaHora();
 
-// 🎨 Fondo dinámico
+/* 🎨 FONDO */
 function cambiarFondo(condicion, esDia) {
   condicion = condicion.toLowerCase();
 
@@ -151,7 +170,7 @@ function cambiarFondo(condicion, esDia) {
   document.body.style.background = fondo;
 }
 
-// 🌤️ Iconos
+/* 🌤 ICONO */
 function obtenerIcono(condicion, esDia) {
   condicion = condicion.toLowerCase();
 
@@ -165,21 +184,30 @@ function obtenerIcono(condicion, esDia) {
   return "PARTLY_CLOUDY_DAY";
 }
 
-// 🌡️ Mostrar clima
+/* 🌡 MOSTRAR CLIMA */
 function mostrarClima(ciudad, data) {
 
   cambiarFondo(data.current.condition.text, data.current.is_day);
 
   document.getElementById("climaUsuario").innerHTML = `
     <div class="card">
-      <h2>📍 ${ciudad}</h2>
-      <canvas id="iconoClima" width="80" height="80"></canvas>
-      <div class="temp">${data.current.temp_c}°C</div>
-      <div class="condicion">${data.current.condition.text}</div>
+      
+      <div class="top">
+        <h2>📍 ${ciudad}</h2>
+        <canvas id="iconoClima" width="80" height="80"></canvas>
+      </div>
+
+      <div class="middle">
+        <div class="temp">${data.current.temp_c}°C</div>
+      </div>
+
+      <div class="bottom">
+        <div class="condicion">${data.current.condition.text}</div>
+      </div>
+
     </div>
   `;
 
-  // activar icono después de renderizar
   setTimeout(() => {
     const skycons = new Skycons({ color: "white" });
     const icono = obtenerIcono(data.current.condition.text, data.current.is_day);
@@ -189,7 +217,7 @@ function mostrarClima(ciudad, data) {
   }, 100);
 }
 
-// 📍 Ubicación automática
+/* 📍 UBICACIÓN */
 function obtenerUbicacion() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -205,7 +233,7 @@ function obtenerUbicacion() {
   }
 }
 
-// 🔎 Buscador
+/* 🔎 BUSCADOR */
 document.getElementById("buscador").addEventListener("keyup", async (e) => {
   let ciudad = e.target.value;
 
@@ -218,7 +246,7 @@ document.getElementById("buscador").addEventListener("keyup", async (e) => {
   mostrarClima(data.location.name, data);
 });
 
-// 🌆 Mini ciudades
+/* 🌆 MINI */
 const miniCiudades = [
   "Hermosillo",
   "Nogales",
@@ -247,15 +275,10 @@ async function cargarMini() {
   }
 }
 
-// iniciar
+/* INICIO */
 obtenerUbicacion();
 cargarMini();
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service Worker registrado"))
-    .catch(error => console.log("Error:", error));
-}
 </script>
 
 </body>
