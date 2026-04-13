@@ -6,8 +6,8 @@
 <title>Clima Ing. Ismael Trujillo</title>
 
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2a5298">
 
-<!-- Skycons -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
 
 <style>
@@ -28,14 +28,11 @@ body {
 
 h1 {
   text-align: center;
-  margin-bottom: 5px;
 }
 
 #fechaHora {
   text-align: center;
-  font-size: 16px;
-  opacity: 0.8;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 input {
@@ -44,72 +41,36 @@ input {
   border-radius: 12px;
   border: none;
   margin-bottom: 15px;
-  font-size: 16px;
-  outline: none;
 }
 
-/* 🔥 CARD PRO */
+/* CARD */
 .card {
   background: rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 25px 20px;
-  text-align: center;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-  animation: fadeIn 0.5s ease;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 240px;
-}
-
-/* BLOQUES */
-.top {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.middle {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.bottom {
+  padding: 20px;
   text-align: center;
 }
 
+/* TEMPERATURA */
 .temp {
-  font-size: 56px;
+  font-size: 50px;
   font-weight: bold;
-  margin: 10px 0;
 }
 
-.condicion {
-  font-size: 18px;
-  opacity: 0.9;
-}
-
-/* MINI CARDS */
+/* GRID */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .mini-card {
   background: rgba(255,255,255,0.08);
-  padding: 15px;
-  border-radius: 15px;
-  text-align: center;
-}
-
-@keyframes fadeIn {
-  from {opacity: 0; transform: translateY(10px);}
-  to {opacity: 1; transform: translateY(0);}
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 13px;
 }
 </style>
 </head>
@@ -133,145 +94,130 @@ input {
 
 const API_KEY = "a03fddc3b16c43218ca182151252004";
 
-/* 🕒 FECHA */
+/* FECHA */
 function actualizarFechaHora() {
   const ahora = new Date();
-  const fecha = ahora.toLocaleDateString('es-MX', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric'
-  });
-  const hora = ahora.toLocaleTimeString('es-MX');
-
   document.getElementById("fechaHora").innerText =
-    `${fecha} - ${hora}`;
+    ahora.toLocaleString("es-MX");
 }
 setInterval(actualizarFechaHora, 1000);
 actualizarFechaHora();
 
-/* 🎨 FONDO */
+/* FONDO */
 function cambiarFondo(condicion, esDia) {
   condicion = condicion.toLowerCase();
 
-  let fondo;
-
   if (!esDia) {
-    fondo = "linear-gradient(135deg, #0f2027, #203a43, #2c5364)";
-  } else if (condicion.includes("soleado") || condicion.includes("despejado")) {
-    fondo = "linear-gradient(135deg, #56ccf2, #2f80ed)";
+    document.body.style.background = "linear-gradient(135deg,#0f2027,#203a43,#2c5364)";
+  } else if (condicion.includes("soleado")) {
+    document.body.style.background = "linear-gradient(135deg,#56ccf2,#2f80ed)";
   } else if (condicion.includes("nublado")) {
-    fondo = "linear-gradient(135deg, #757f9a, #d7dde8)";
-  } else if (condicion.includes("lluvia") || condicion.includes("tormenta")) {
-    fondo = "linear-gradient(135deg, #232526, #414345)";
+    document.body.style.background = "linear-gradient(135deg,#757f9a,#d7dde8)";
   } else {
-    fondo = "linear-gradient(135deg, #1e3c72, #2a5298)";
+    document.body.style.background = "linear-gradient(135deg,#1e3c72,#2a5298)";
   }
-
-  document.body.style.background = fondo;
 }
 
-/* 🌤 ICONO */
+/* ICONO */
 function obtenerIcono(condicion, esDia) {
-  condicion = condicion.toLowerCase();
-
   if (!esDia) return "CLEAR_NIGHT";
-  if (condicion.includes("soleado") || condicion.includes("despejado")) return "CLEAR_DAY";
+  if (condicion.includes("soleado")) return "CLEAR_DAY";
   if (condicion.includes("nublado")) return "CLOUDY";
-  if (condicion.includes("parcial")) return "PARTLY_CLOUDY_DAY";
   if (condicion.includes("lluvia")) return "RAIN";
-  if (condicion.includes("tormenta")) return "SLEET";
-
   return "PARTLY_CLOUDY_DAY";
 }
 
-/* 🌡 MOSTRAR CLIMA */
+/* MOSTRAR CLIMA */
 function mostrarClima(ciudad, data) {
 
   cambiarFondo(data.current.condition.text, data.current.is_day);
 
   document.getElementById("climaUsuario").innerHTML = `
     <div class="card">
-      
-      <div class="top">
-        <h2>📍 ${ciudad}</h2>
-        <canvas id="iconoClima" width="80" height="80"></canvas>
-      </div>
+      <h2>${ciudad}</h2>
+      <canvas id="iconoClima" width="80" height="80"></canvas>
+      <div class="temp">${data.current.temp_c}°C</div>
+      <div>${data.current.condition.text}</div>
 
-      <div class="middle">
-        <div class="temp">${data.current.temp_c}°C</div>
-      </div>
-
-      <div class="bottom">
-        <div class="condicion">${data.current.condition.text}</div>
-      </div>
-
+      <p>
+        💧 ${data.forecast.forecastday[0].day.daily_chance_of_rain}%<br>
+        💨 ${data.current.wind_kph} km/h<br>
+        🌡️ ${data.current.feelslike_c}°C
+      </p>
     </div>
   `;
 
-  setTimeout(() => {
-    const skycons = new Skycons({ color: "white" });
-    const icono = obtenerIcono(data.current.condition.text, data.current.is_day);
+  const skycons = new Skycons({ color: "white" });
+  const icono = obtenerIcono(data.current.condition.text, data.current.is_day);
+  skycons.add("iconoClima", Skycons[icono]);
+  skycons.play();
 
-    skycons.add("iconoClima", Skycons[icono]);
-    skycons.play();
-  }, 100);
+  mostrarPronostico(data);
 }
 
-/* 📍 UBICACIÓN */
-function obtenerUbicacion() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      let lat = pos.coords.latitude;
-      let lon = pos.coords.longitude;
+/* PRONOSTICO */
+function mostrarPronostico(data) {
 
-      let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${lat},${lon}&lang=es`;
-      let res = await fetch(url);
-      let data = await res.json();
+  let html = "<div class='grid'>";
 
-      mostrarClima(data.location.name, data);
+  data.forecast.forecastday.forEach(dia => {
+
+    let fecha = new Date(dia.date).toLocaleDateString("es-MX", {
+      weekday: "short"
     });
-  }
+
+    html += `
+      <div class="mini-card">
+        <strong>${fecha}</strong><br>
+        ${dia.day.maxtemp_c}° / ${dia.day.mintemp_c}°<br>
+        💧 ${dia.day.daily_chance_of_rain}%
+      </div>
+    `;
+  });
+
+  html += "</div>";
+
+  document.getElementById("climaUsuario").innerHTML += html;
 }
 
-/* 🔎 BUSCADOR */
+/* UBICACION */
+function obtenerUbicacion() {
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    let url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${pos.coords.latitude},${pos.coords.longitude}&days=3&lang=es`;
+    let res = await fetch(url);
+    let data = await res.json();
+    mostrarClima(data.location.name, data);
+  });
+}
+
+/* BUSCADOR */
 document.getElementById("buscador").addEventListener("keyup", async (e) => {
   let ciudad = e.target.value;
-
   if (ciudad.length < 3) return;
 
-  let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad},Sonora,Mexico&lang=es`;
+  let url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${ciudad}&days=3&lang=es`;
   let res = await fetch(url);
   let data = await res.json();
 
   mostrarClima(data.location.name, data);
 });
 
-/* 🌆 MINI */
-const miniCiudades = [
-  "Hermosillo",
-  "Nogales",
-  "Ciudad Obregon",
-  "San Luis Rio Colorado"
-];
+/* MINI */
+const miniCiudades = ["Hermosillo","Nogales","Caborca"];
 
 async function cargarMini() {
   let contenedor = document.getElementById("miniClima");
-  contenedor.innerHTML = "";
 
   for (let ciudad of miniCiudades) {
-    let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad},Sonora,Mexico&lang=es`;
+    let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad}&lang=es`;
     let res = await fetch(url);
     let data = await res.json();
 
-    let div = document.createElement("div");
-    div.className = "mini-card";
-
-    div.innerHTML = `
-      <strong>${ciudad}</strong><br>
-      ${data.current.temp_c}°C
+    contenedor.innerHTML += `
+      <div class="mini-card">
+        ${ciudad}<br>${data.current.temp_c}°
+      </div>
     `;
-
-    contenedor.appendChild(div);
   }
 }
 
