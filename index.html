@@ -32,7 +32,7 @@ h1 {
 
 #fechaHora {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 input {
@@ -40,7 +40,20 @@ input {
   padding: 12px;
   border-radius: 12px;
   border: none;
+  margin-bottom: 10px;
+}
+
+/* BOTÓN INSTALAR */
+#btnInstalar {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #2ecc71;
+  color: white;
+  font-size: 16px;
   margin-bottom: 15px;
+  display: none;
 }
 
 /* CARD */
@@ -52,13 +65,12 @@ input {
   text-align: center;
 }
 
-/* TEMPERATURA */
 .temp {
   font-size: 50px;
   font-weight: bold;
 }
 
-/* GRID */
+/* PRONÓSTICO */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -84,9 +96,9 @@ input {
 
 <input type="text" id="buscador" placeholder="Buscar ciudad...">
 
-<div id="climaUsuario"></div>
+<button id="btnInstalar">📲 Instalar App</button>
 
-<div class="grid" id="miniClima"></div>
+<div id="climaUsuario"></div>
 
 </div>
 
@@ -96,12 +108,10 @@ const API_KEY = "a03fddc3b16c43218ca182151252004";
 
 /* FECHA */
 function actualizarFechaHora() {
-  const ahora = new Date();
   document.getElementById("fechaHora").innerText =
-    ahora.toLocaleString("es-MX");
+    new Date().toLocaleString("es-MX");
 }
 setInterval(actualizarFechaHora, 1000);
-actualizarFechaHora();
 
 /* FONDO */
 function cambiarFondo(condicion, esDia) {
@@ -113,6 +123,8 @@ function cambiarFondo(condicion, esDia) {
     document.body.style.background = "linear-gradient(135deg,#56ccf2,#2f80ed)";
   } else if (condicion.includes("nublado")) {
     document.body.style.background = "linear-gradient(135deg,#757f9a,#d7dde8)";
+  } else if (condicion.includes("lluvia")) {
+    document.body.style.background = "linear-gradient(135deg,#232526,#414345)";
   } else {
     document.body.style.background = "linear-gradient(135deg,#1e3c72,#2a5298)";
   }
@@ -140,9 +152,9 @@ function mostrarClima(ciudad, data) {
       <div>${data.current.condition.text}</div>
 
       <p>
-        💧 ${data.forecast.forecastday[0].day.daily_chance_of_rain}%<br>
-        💨 ${data.current.wind_kph} km/h<br>
-        🌡️ ${data.current.feelslike_c}°C
+        💧 Lluvia: ${data.forecast.forecastday[0].day.daily_chance_of_rain}%<br>
+        💨 Viento: ${data.current.wind_kph} km/h<br>
+        🌡️ Sensación: ${data.current.feelslike_c}°C
       </p>
     </div>
   `;
@@ -155,7 +167,7 @@ function mostrarClima(ciudad, data) {
   mostrarPronostico(data);
 }
 
-/* PRONOSTICO */
+/* PRONÓSTICO */
 function mostrarPronostico(data) {
 
   let html = "<div class='grid'>";
@@ -180,7 +192,7 @@ function mostrarPronostico(data) {
   document.getElementById("climaUsuario").innerHTML += html;
 }
 
-/* UBICACION */
+/* UBICACIÓN */
 function obtenerUbicacion() {
   navigator.geolocation.getCurrentPosition(async (pos) => {
     let url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${pos.coords.latitude},${pos.coords.longitude}&days=3&lang=es`;
@@ -190,40 +202,57 @@ function obtenerUbicacion() {
   });
 }
 
-/* BUSCADOR */
-document.getElementById("buscador").addEventListener("keyup", async (e) => {
-  let ciudad = e.target.value;
-  if (ciudad.length < 3) return;
+/* BUSCADOR OPTIMIZADO */
+let timeout;
 
-  let url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${ciudad}&days=3&lang=es`;
-  let res = await fetch(url);
-  let data = await res.json();
+document.getElementById("buscador").addEventListener("keyup", (e) => {
 
-  mostrarClima(data.location.name, data);
+  clearTimeout(timeout);
+
+  timeout = setTimeout(async () => {
+
+    let ciudad = e.target.value.trim();
+
+    if (ciudad.length < 3) return;
+
+    try {
+      let url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${ciudad}&days=3&lang=es`;
+
+      let res = await fetch(url);
+
+      if (!res.ok) throw new Error("Error API");
+
+      let data = await res.json();
+
+      if (data.error) return;
+
+      mostrarClima(data.location.name, data);
+
+    } catch (error) {
+      console.log(error);
+    }
+
+  }, 800);
 });
 
-/* MINI */
-const miniCiudades = ["Hermosillo","Nogales","Caborca"];
+/* BOTÓN INSTALAR */
+let deferredPrompt;
 
-async function cargarMini() {
-  let contenedor = document.getElementById("miniClima");
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById("btnInstalar").style.display = "block";
+});
 
-  for (let ciudad of miniCiudades) {
-    let url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad}&lang=es`;
-    let res = await fetch(url);
-    let data = await res.json();
-
-    contenedor.innerHTML += `
-      <div class="mini-card">
-        ${ciudad}<br>${data.current.temp_c}°
-      </div>
-    `;
+document.getElementById("btnInstalar").addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt = null;
   }
-}
+});
 
 /* INICIO */
 obtenerUbicacion();
-cargarMini();
 
 </script>
 
